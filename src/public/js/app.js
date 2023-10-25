@@ -1,49 +1,21 @@
-const messageList = document.querySelector("ul");
+const socket = io();
 
-const messageForm = document.querySelector("#message");
+const welcome = document.querySelector("#welcome");
 
-const nickForm = document.querySelector("#nick");
+const form = welcome.querySelector("form");
 
-const socket = new WebSocket(`ws://${window.location.host}`);
-
-function makeMessage(type, payload) {
-  const msg = { type, payload };
-  return JSON.stringify(msg);
+function backendDone(msg) {
+  console.log(`The backend says: ${msg}`);
 }
 
-socket.addEventListener("open", () => {
-  console.log("Connected to Server ✅");
-});
-
-socket.addEventListener("message", (message) => {
-  const li = document.createElement("li");
-  li.textContent = message.data;
-
-  messageList.append(li);
-});
-
-socket.addEventListener("close", () => {
-  console.log("Disconnected from the Server ❌");
-});
-
-function handleMessageSubmit(event) {
+function handleRoomSubmit(event) {
   event.preventDefault();
 
-  const input = messageForm.querySelector("input");
+  const input = form.querySelector("input");
 
-  socket.send(makeMessage("new_message", input.value));
+  socket.emit("enter_room", input.value, backendDone);
+
   input.value = "";
 }
 
-messageForm.addEventListener("submit", handleMessageSubmit);
-
-function handleNickSubmit(event) {
-  event.preventDefault();
-
-  const input = nickForm.querySelector("input");
-
-  socket.send(makeMessage("nickname", input.value));
-  input.value = "";
-}
-
-nickForm.addEventListener("submit", handleNickSubmit);
+form.addEventListener("submit", handleRoomSubmit);
