@@ -24,11 +24,17 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-  socket.on("enter_room", (rooName, done) => {
-    console.log(rooName);
-    setTimeout(() => {
-      done("Hello from the backend");
-    }, 5000);
+  // event is like enter_room, anymore
+  socket.onAny((event) => {
+    console.log(`Socket Event: ${event}`);
+  });
+
+  socket.on("enter_room", (roomName, done) => {
+    socket.join(roomName);
+
+    done();
+
+    socket.to(roomName).emit("welcome");
   });
 });
 
