@@ -108,12 +108,12 @@ cameraBtn.addEventListener("click", handleCameraClick);
 
 camerasSelect.addEventListener("input", handleCameraChange);
 
-// Welcome Form  (join a room)
+// -------------- Welcome Form  (join a room) -------------- //
 const welcome = document.querySelector("#welcome");
 
 const welcomeForm = welcome.querySelector("form");
 
-async function startMedia() {
+async function initCall() {
   welcome.hidden = true;
 
   call.hidden = false;
@@ -123,12 +123,14 @@ async function startMedia() {
   makeConnection();
 }
 
-function handleWelcomeSubmit(event) {
+async function handleWelcomeSubmit(event) {
   event.preventDefault();
 
   const input = welcomeForm.querySelector("input");
 
-  socket.emit("join_room", input.value, startMedia);
+  await initCall();
+
+  socket.emit("join_room", input.value);
 
   roomName = input.value;
 
@@ -137,7 +139,7 @@ function handleWelcomeSubmit(event) {
 
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
-// Socket Code
+// ---------------------- Socket Code ---------------------- //
 
 // This execute left browser
 socket.on("welcome", async () => {
@@ -151,13 +153,30 @@ socket.on("welcome", async () => {
 });
 
 // This execute right browser
-socket.on("offer", (offer, roomName) => {
+socket.on("offer", async (offer) => {
   console.log("Received the offer right browser");
 
-  console.log(offer, roomName);
+  myPeerConnection.setRemoteDescription(offer);
+
+  const answer = await myPeerConnection.createAnswer();
+
+  myPeerConnection.setLocalDescription(answer);
+
+  console.log("Sent the answer from right browser");
+
+  socket.emit("answer", answer, roomName);
+
+  console.log(answer);
 });
 
-// RTC Code
+// This execute left browser
+socket.on("answer", (answer) => {
+  console.log("Received the answer left browser");
+
+  myPeerConnection.setRemoteDescription(answer);
+});
+
+// ----------------------- RTC Code ----------------------- //
 function makeConnection() {
   myPeerConnection = new RTCPeerConnection();
 
