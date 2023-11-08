@@ -20,6 +20,8 @@ let cameraOff = false;
 
 let roomName;
 
+let myPeerConnection;
+
 async function getCameras() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -117,6 +119,8 @@ async function startMedia() {
   call.hidden = false;
 
   await getMedia();
+
+  makeConnection();
 }
 
 function handleWelcomeSubmit(event) {
@@ -134,6 +138,30 @@ function handleWelcomeSubmit(event) {
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 // Socket Code
-socket.on("welcome", () => {
-  console.log("someone joined");
+
+// This execute left browser
+socket.on("welcome", async () => {
+  const offer = await myPeerConnection.createOffer();
+
+  myPeerConnection.setLocalDescription(offer);
+
+  console.log("Sent the offer from left browser");
+
+  socket.emit("offer", offer, roomName);
 });
+
+// This execute right browser
+socket.on("offer", (offer, roomName) => {
+  console.log("Received the offer right browser");
+
+  console.log(offer, roomName);
+});
+
+// RTC Code
+function makeConnection() {
+  myPeerConnection = new RTCPeerConnection();
+
+  myStream
+    .getTracks()
+    .forEach((track) => myPeerConnection.addTrack(track, myStream));
+}
