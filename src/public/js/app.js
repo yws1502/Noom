@@ -165,8 +165,6 @@ socket.on("offer", async (offer) => {
   console.log("Sent the answer from right browser");
 
   socket.emit("answer", answer, roomName);
-
-  console.log(answer);
 });
 
 // This execute left browser
@@ -176,11 +174,35 @@ socket.on("answer", (answer) => {
   myPeerConnection.setRemoteDescription(answer);
 });
 
+socket.on("ice", (ice) => {
+  console.log("received candidate");
+  myPeerConnection.addIceCandidate(ice);
+});
+
 // ----------------------- RTC Code ----------------------- //
 function makeConnection() {
   myPeerConnection = new RTCPeerConnection();
 
+  myPeerConnection.addEventListener("icecandidate", handleIce);
+
+  myPeerConnection.addEventListener("addstream", handleAddStream);
+
   myStream
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, myStream));
+}
+
+function handleIce(data) {
+  console.log("sent candidate");
+  socket.emit("ice", data.candidate, roomName);
+}
+
+function handleAddStream(data) {
+  const peerFace = document.querySelector("#peerFace");
+
+  console.log("got an stream from my peer");
+  console.log("Peer's Stream", data.stream);
+  console.log("My Stream", myStream);
+
+  peerFace.srcObject = data.stream;
 }
